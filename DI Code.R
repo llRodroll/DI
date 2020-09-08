@@ -117,9 +117,7 @@ n1 = nrow(r)                         #-- Number of observations
 sm = c(60,250,500,1000)              #-- sub samples sizes
 n_sm = length(sm)                    #-- Number of sub sample sizes
 
-### 2.1. Indepencia
-
-# 2.1.1. Autocorrelación Lineal
+### 2.1. LB
 
 # La idea es realizar Ljung-Box hasta encontrar el rezago M cuyo p-value<0.05
 # porque la LB tiene como H0 que la correlación es cero conjuntamente hasta el rezago M
@@ -167,7 +165,7 @@ for (k in 1:ncp) {
 # Exportar tablas de resumen
 write.table(tlb, file = "tlb.cvs", sep = ",")
 
-### 2.2 Pruebas estadísticas para Estacionariedad
+### 2.2 ADF
 
 #-- ADF: el max rezago se calcula de acuerdo a [12*(T/100)^(1/4)] donde [] es la parte entera del número
 #-- se realiza un pequeño "algoritmo" donde se mira si el útlimo rezago tiene un abs(t-stat) > 1.6, si no
@@ -319,3 +317,114 @@ write.table(tadfnc, file = "tadfnc.cvs", sep = ",")
 getwd()# direccion donde quedó el archivo 
 write.table(tadfc, file = "tadfc.cvs", sep = ",")
 write.table(tadftc, file = "tadftc.cvs", sep = ",")
+
+### 2.3. Estimación de Momentos
+
+# Matriz 4-D: i = filas (fechas), j = submuestras, 
+# k = indices (S&P500, COLCAP, IPyC, IPSA y SPBVL), z = estadistica (media, varianza, asimetira, curtosis)
+m4d = array(data = NA, dim = c(n1,n_sm,ncp,4))
+dimnames(m4d)[[2]] = c("S-60","S-250","S-500","S-1000")
+dimnames(m4d)[[3]] = c("S&P500","COLCAP","IPyC","IPSA","SPBVL")
+dimnames(m4d)[[4]] = c("Media","Varianza","Asimetria","Curtosis")
+
+for (k in 1:ncp) {
+  for (j in 1:n_sm) {
+    for(i in sm[j]:n1){
+      m4d[i,j,k,1] = mean(r[(i-sm[j]+1):i,k])
+      m4d[i,j,k,2] = var(r[(i-sm[j]+1):i,k])
+      m4d[i,j,k,3] = skewness(r[(i-sm[j]+1):i,k])
+      m4d[i,j,k,4] = kurtosis(r[(i-sm[j]+1):i,k]) #-- curtosis
+    }
+  }
+}
+
+### Gráfico
+
+### 2x1 - SOLO S&P 500
+
+windows() ## create window to plot your file
+layout(matrix(c(1,2), ncol=2, byrow=TRUE), heights=c(4,1))
+par(mai=c(0.7,0.9,0.5,0.2))
+
+matplot(m4d[,,1,2], m4d[,,1,1],pch=20, ylab = 'Media', xlab = 'Varianza')
+abline(h=0,col="black",lty=2)
+abline(v=1,col="black",lty=2)
+
+title("S&P500", outer = TRUE, line = -1)
+
+matplot(m4d[,,1,3], m4d[,,1,4],pch=20, ylab = 'Curtosis', xlab = 'Asimetria')
+abline(h=3,col="black",lty=2)
+abline(v=0,col="black",lty=2)
+
+
+### 4 indices MILA en una sola ventana
+
+windows() ## create window to plot your file
+layout(matrix(c(1,1,2,2,3,4,5,6,7,7,8,8,9,10,11,12,13,13,13,13), ncol=4, byrow=TRUE), heights=c(0.5,3,0.5,3,1))
+
+par(mai=c(0,0,0.4,0))
+plot.new()
+title(main = "COLCAP")
+
+par(mai=c(0,0,0.4,0))
+plot.new()
+title(main = "IPyC")
+
+#COLCAP
+par(mai=c(0.6,0.6,0,0))
+matplot(m4d[,,2,2], m4d[,,2,1],pch=20, ylab = 'Media', xlab = 'Varianza')
+abline(h=0,col="black",lty=2)
+abline(v=1,col="black",lty=2)
+
+par(mai=c(0.6,0.6,0,0))
+matplot(m4d[,,2,3], m4d[,,2,4],pch=20, ylab = 'Curtosis', xlab = 'Asimetria')
+abline(h=3,col="black",lty=2)
+abline(v=0,col="black",lty=2)
+
+#IPyC
+par(mai=c(0.6,0.6,0,0))
+matplot(m4d[,,3,2], m4d[,,3,1],pch=20, ylab = 'Media', xlab = 'Varianza')
+abline(h=0,col="black",lty=2)
+abline(v=1,col="black",lty=2)
+
+par(mai=c(0.6,0.6,0,0.2))
+matplot(m4d[,,3,3], m4d[,,3,4],pch=20, ylab = 'Curtosis', xlab = 'Asimetria')
+abline(h=3,col="black",lty=2)
+abline(v=0,col="black",lty=2)
+
+par(mai=c(0,0,0.4,0))
+plot.new()
+title(main = "IPSA")
+
+par(mai=c(0,0,0.4,0))
+plot.new()
+title(main = "SPBVL")
+
+#IPSA
+par(mai=c(0.6,0.6,0,0))
+matplot(m4d[,,4,2], m4d[,,4,1],pch=20, ylab = 'Media', xlab = 'Varianza')
+abline(h=0,col="black",lty=2)
+abline(v=1,col="black",lty=2)
+
+par(mai=c(0.6,0.6,0,0))
+matplot(m4d[,,4,3], m4d[,,4,4],pch=20, ylab = 'Curtosis', xlab = 'Asimetria')
+abline(h=3,col="black",lty=2)
+abline(v=0,col="black",lty=2)
+
+#SPBVL
+par(mai=c(0.6,0.6,0,0))
+matplot(m4d[,,5,2], m4d[,,5,1],pch=20, ylab = 'Media', xlab = 'Varianza')
+abline(h=0,col="black",lty=2)
+abline(v=1,col="black",lty=2)
+
+par(mai=c(0.6,0.6,0,0.2))
+matplot(m4d[,,5,3], m4d[,,5,4],pch=20, ylab = 'Curtosis', xlab = 'Asimetria')
+abline(h=3,col="black",lty=2)
+abline(v=0,col="black",lty=2)
+
+
+par(mai=c(0,0,0,0))
+plot.new()
+legend(x="center", ncol=4,legend=c("60","250","500","1000"),pch=20,
+       col = c("black","red","green","blue"), cex = 2, pt.cex = 5)
+
