@@ -344,7 +344,7 @@ for (k in 1:ncp) {
 
 windows() ## create window to plot your file
 layout(matrix(c(1,2), ncol=2, byrow=TRUE), heights=c(4,1))
-par(mai=c(0.7,0.9,0.5,0.2))
+par(mai=c(0.9,0.9,0.5,0.2))
 
 matplot(m4d[,,1,2], m4d[,,1,1],pch=20, ylab = 'Media', xlab = 'Varianza')
 abline(h=0,col="black",lty=2)
