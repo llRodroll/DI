@@ -428,3 +428,89 @@ plot.new()
 legend(x="center", ncol=4,legend=c("60","250","500","1000"),pch=20,
        col = c("black","red","green","blue"), cex = 2, pt.cex = 5)
 
+### 2.4. Normalidad - Jarque Bera
+
+dn2 = array(data = NA, dim = c(n1,n_sm,ncp))
+dimnames(dn2)[[2]] = c("S-60","S-250","S-500","S-1000")
+dimnames(dn2)[[3]] = c("S&P500","COLCAP","IPyC","IPSA","SPBVL")
+
+for (k in 1:ncp) {
+  for (j in 1:n_sm) {
+    for(i in sm[j]:n1) {
+      
+      tmp = (i-sm[j]+1)
+      f = jarque.bera.test(r[tmp:i,k])
+      dn2[i,j,k] = f$p.value ## me da el nombre de la distribución con el menor aic
+      
+    }
+  }
+}
+
+## Array para resumir resultados de todos los indicies jarque - bera
+
+tdn2 = array(data = NA, dim = c(n_sm,2,ncp))
+dimnames(tdn2)[[1]] = c("60","250","500","1000")
+dimnames(tdn2)[[2]] = c("Rechazo","No Rechazo")
+dimnames(tdn2)[[3]] = c("S&P500","COLCAP","IPyC","IPSA","SPBVL")
+
+for (k in 1:ncp) {
+  for (i in 1:n_sm) {
+    
+    tdn2[i,1,k] = sum(dn2[,i,k]<0.05, na.rm = TRUE)
+    tdn2[i,2,k] = sum(dn2[,i,k]>=0.05, na.rm = TRUE)
+    
+  }
+}
+
+# Exportar tablas de resumen
+write.table(tdn2, file = "tdn2.cvs", sep = ",")
+
+### 2.5. Otras distribuciones
+
+dn = array(data = NA, dim = c(n1,n_sm,ncp))
+dimnames(dn)[[2]] = c("S-60","S-250","S-500","S-1000")
+dimnames(dn)[[3]] = c("S&P500","COLCAP","IPyC","IPSA","SPBVL")
+
+for (k in 1:ncp) {
+  for (j in 1:n_sm) {
+    for(i in sm[j]:n1) {
+      
+      tmp = (i-sm[j]+1)
+      h   = r[tmp:i,k]
+      fit_n  = fitdist(h, "norm")
+      fit_t  = fitdist(h, "t", start = list(df = 10)) # los gl son iguales al tamaño de la muestra-1
+      fit_c  = fitdist(h, "cauchy")
+      fit_l  = fitdist(h, "laplace", start = list(mu = 0, sigma = 1))
+      fit_gb = fitdist(h, "nsbeta", start = list(shape1 = 100, shape2 = 10, min = -100, max = 100))
+      
+      s = gofstat(list(fit_n, fit_t, fit_c, fit_l,fit_gb), 
+                  fitnames = c("norm","t","cauchy","laplace","beta_gen"))
+      
+      dn[i,j,k] = names(sort(s$aic))[1] ## me da el nombre de la distribución con el menor aic
+      
+    }
+  }
+}
+
+## Array para resumir resultados de todos los indicies dn
+
+tdn = array(data = NA, dim = c(n_sm,5,ncp))
+dimnames(tdn)[[1]] = c("60","250","500","1000")
+dimnames(tdn)[[2]] = c("norm","t","cauchy","laplace","beta_gen")  
+dimnames(tdn)[[3]] = c("S&P500","COLCAP","IPyC","IPSA","SPBVL")
+
+for (k in 1:ncp) {
+  for (i in 1:n_sm) {
+    
+    tdn[i,1,k] = sum(dn[,i,k]=="norm", na.rm = TRUE)
+    tdn[i,2,k] = sum(dn[,i,k]=="t", na.rm = TRUE)
+    tdn[i,3,k] = sum(dn[,i,k]=="cauchy", na.rm = TRUE)
+    tdn[i,4,k] = sum(dn[,i,k]=="laplace", na.rm = TRUE)
+    tdn[i,5,k] = sum(dn[,i,k]=="beta_gen", na.rm = TRUE)
+    
+  }
+}
+
+# Exportar tablas de resumen
+write.table(tdn, file = "tdn.cvs", sep = ",")
+
