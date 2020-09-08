@@ -481,10 +481,9 @@ for (k in 1:ncp) {
       fit_t  = fitdist(h, "t", start = list(df = 10)) # los gl son iguales al tamaño de la muestra-1
       fit_c  = fitdist(h, "cauchy")
       fit_l  = fitdist(h, "laplace", start = list(mu = 0, sigma = 1))
-      fit_gb = fitdist(h, "nsbeta", start = list(shape1 = 100, shape2 = 10, min = -100, max = 100))
       
-      s = gofstat(list(fit_n, fit_t, fit_c, fit_l,fit_gb), 
-                  fitnames = c("norm","t","cauchy","laplace","beta_gen"))
+      s = gofstat(list(fit_n, fit_t, fit_c, fit_l), 
+                  fitnames = c("norm","t","cauchy","laplace"))
       
       dn[i,j,k] = names(sort(s$aic))[1] ## me da el nombre de la distribución con el menor aic
       
@@ -494,9 +493,9 @@ for (k in 1:ncp) {
 
 ## Array para resumir resultados de todos los indicies dn
 
-tdn = array(data = NA, dim = c(n_sm,5,ncp))
+tdn = array(data = NA, dim = c(n_sm,4,ncp))
 dimnames(tdn)[[1]] = c("60","250","500","1000")
-dimnames(tdn)[[2]] = c("norm","t","cauchy","laplace","beta_gen")  
+dimnames(tdn)[[2]] = c("norm","t","cauchy","laplace")  
 dimnames(tdn)[[3]] = c("S&P500","COLCAP","IPyC","IPSA","SPBVL")
 
 for (k in 1:ncp) {
@@ -506,7 +505,6 @@ for (k in 1:ncp) {
     tdn[i,2,k] = sum(dn[,i,k]=="t", na.rm = TRUE)
     tdn[i,3,k] = sum(dn[,i,k]=="cauchy", na.rm = TRUE)
     tdn[i,4,k] = sum(dn[,i,k]=="laplace", na.rm = TRUE)
-    tdn[i,5,k] = sum(dn[,i,k]=="beta_gen", na.rm = TRUE)
     
   }
 }
